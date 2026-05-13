@@ -40,6 +40,7 @@ class CoercePipeline:
                         target,
                         method,
                         self.cfg.coerce.callback_host,
+                        getattr(self.cfg.coerce, "always", False),
                     )
                     futures[future] = sess.id
 
@@ -61,8 +62,8 @@ class CoercePipeline:
                     logger.exception(f"Coerce exception for session {sid}")
                     self.registry.transition(sid, SessionStatus.FAILED, error="exception")
 
-    def _coerce_one(self, sid: str, target: str, method: str, callback: str) -> tuple[bool, str]:
+    def _coerce_one(self, sid: str, target: str, method: str, callback: str, always: bool = False) -> tuple[bool, str]:
         logger.info(f"[Coerce] {sid} {method} -> {target}")
-        success, stdout = self.nxc.coerce(target, method, callback)
+        success, stdout = self.nxc.coerce(target, method, callback, always=always)
         time.sleep(self.cfg.coerce.delay_between)
         return success, stdout

